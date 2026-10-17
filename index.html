@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIELS PALERMO — Abstract Audio Lab</title>
+    <!-- Fuente tipo LCD / Terminal Fina Fósforo Minimalista -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        /* RESET & BASE */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            background-color: #050508;
+            color: #d0d0d8;
+            font-family: 'Courier New', Courier, monospace; /* Estilo crudo / minimalista */
+        }
+
+        /* FONDO CANVAS FRACTAL ANIMADO */
+        #fractalCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            opacity: 0.28;
+            pointer-events: none;
+        }
+
+        /* CONTENEDOR FLOTANTE ASIMÉTRICO */
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            min-height: 100vh;
+            padding: 4vw;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        /* HEADER DESESTRUCTURADO */
+        header {
+            grid-column: 1 / span 8;
+            margin-top: 4vh;
+            margin-left: 2vw;
+            transform: rotate(-1.5deg); /* Rompe la horizontalidad */
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            color: #ffffff;
+            text-transform: uppercase;
+            text-shadow: 0 0 15px rgba(255, 85, 0, 0.3);
+        }
+
+        h1 span {
+            color: #ff6a1a;
+            font-style: italic;
+        }
+
+        .bio-tag {
+            background: rgba(255, 106, 26, 0.05);
+            border-left: 2px solid #ff6a1a;
+            padding: 10px 15px;
+            margin-top: 15px;
+            max-width: 480px;
+            font-size: 0.85rem;
+            backdrop-filter: blur(5px);
+            clip-path: polygon(0 0, 100% 0, 95% 100%, 0 100%);
+        }
+
+        /* NAVEGACIÓN Y NODOS */
+        .social-nodes {
+            grid-column: 9 / span 4;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: flex-start;
+            margin-top: 6vh;
+        }
+
+        .node-btn {
+            color: #e07a48;
+            text-decoration: none;
+            border: 1px solid rgba(224, 122, 72, 0.4);
+            padding: 8px 18px;
+            margin-bottom: 12px;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            background: rgba(5, 5, 8, 0.75);
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+        }
+
+        .node-btn:hover {
+            background: #e07a48;
+            color: #050508;
+            box-shadow: 0 0 15px rgba(224, 122, 72, 0.4);
+            transform: scale(1.04) rotate(1deg);
+        }
+
+        /* SECCIÓN LCD DISPLAY: DESCRIPCIÓN YOUTUBE SUAVE */
+        .lcd-display-zone {
+            grid-column: 2 / span 10;
+            margin-top: 4vh;
+            margin-bottom: 2vh;
+            transform: rotate(0.8deg);
+        }
+
+        .lcd-screen {
+            background: rgba(10, 14, 12, 0.85);
+            border: 1px solid rgba(80, 140, 105, 0.25);
+            border-left: 3px solid rgba(120, 190, 150, 0.5);
+            padding: 22px 28px;
+            border-radius: 4px;
+            backdrop-filter: blur(6px);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(80, 140, 105, 0.05);
+            clip-path: polygon(0 0, 99% 1%, 100% 98%, 1% 100%);
+        }
+
+        .lcd-header {
+            font-family: 'VT323', monospace;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            color: rgba(140, 180, 160, 0.6);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .lcd-text {
+            font-family: 'VT323', monospace;
+            font-size: 1.4rem;
+            line-height: 1.35;
+            color: #b5ded1; /* Verde menta fósforo suave / LCD retro */
+            text-shadow: 0 0 6px rgba(181, 222, 209, 0.25);
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+
+        .lcd-text span.highlight {
+            color: #f0c294; /* Ámbar suave LCD */
+            text-shadow: 0 0 6px rgba(240, 194, 148, 0.3);
+        }
+
+        /* SECCIÓN DE VIDEOS */
+        .video-zone {
+            grid-column: 1 / span 12;
+            margin-top: 5vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            letter-spacing: 4px;
+            color: #777;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        /* FRAME ABSTRACTO DEL VIDEO */
+        .abstract-video-card {
+            position: relative;
+            width: 100%;
+            max-width: 850px;
+            background: #0b0b10;
+            border: 1px solid #202028;
+            padding: 15px;
+            clip-path: polygon(0 0, 98% 2%, 100% 95%, 2% 100%);
+            box-shadow: 0 0 35px rgba(0, 0, 0, 0.8);
+            transition: border-color 0.4s ease;
+        }
+
+        .abstract-video-card:hover {
+            border-color: rgba(255, 106, 26, 0.5);
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        /* CONTROLES */
+        .video-controls {
+            margin-top: 25px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .random-btn {
+            background: transparent;
+            border: 1px solid rgba(224, 122, 72, 0.6);
+            color: #d0d0d8;
+            padding: 10px 24px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: 0.3s;
+            clip-path: polygon(0 0, 90% 0, 100% 100%, 10% 100%);
+        }
+
+        .random-btn:hover {
+            background: #e07a48;
+            color: #050508;
+            font-weight: bold;
+        }
+
+        /* LISTA DE HARDWARE */
+        .setup-grid {
+            grid-column: 2 / span 10;
+            margin-top: 8vh;
+            margin-bottom: 8vh;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 35px;
+        }
+
+        .hardware-card {
+            background: rgba(14, 14, 20, 0.6);
+            border-top: 2px solid #2a2a35;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+            transition: 0.3s;
+        }
+
+        .hardware-card:nth-child(even) {
+            transform: translateY(18px) rotate(1deg);
+            border-top-color: rgba(224, 122, 72, 0.6);
+        }
+
+        .hardware-card:nth-child(odd) {
+            transform: translateY(-8px) rotate(-1deg);
+        }
+
+        .hardware-card h3 {
+            color: #eee;
+            font-size: 1.05rem;
+            margin-bottom: 8px;
+        }
+
+        .hardware-card p {
+            color: #888;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        footer {
+            grid-column: 1 / span 12;
+            text-align: center;
+            padding: 40px 0;
+            font-size: 0.7rem;
+            color: #555;
+            letter-spacing: 2px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            header { grid-column: 1 / span 12; }
+            .social-nodes { grid-column: 1 / span 12; align-items: flex-start; margin-top: 20px; }
+            .lcd-display-zone { grid-column: 1 / span 12; transform: none; }
+            .setup-grid { grid-column: 1 / span 12; }
+            .hardware-card { transform: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CANVA TEXTURA FRACTAL ANIMADA -->
+    <canvas id="fractalCanvas"></canvas>
+
+    <div class="wrapper">
+        
+        <!-- CABECERA PRINCIPAL -->
+        <header>
+            <h1>NIELS <span>PALERMO</span></h1>
+            <div class="bio-tag">
+                [BsAs / Cat. 1992] — Sonido Experimental, Drums & Bass, Ambient & Hip Hop.
+            </div>
+        </header>
+
+        <!-- NODOS DE NAVEGACIÓN -->
+        <div class="social-nodes">
+            <a href="https://www.youtube.com/@niels.palermo" target="_blank" class="node-btn">YouTube Channel</a>
+            <a href="https://www.youtube.com/playlist?list=PLZAITnN_ma4A" target="_blank" class="node-btn">Demo Recordings</a>
+        </div>
+
+        <!-- PANTALLA TIPO LCD MINIMALISTA CON TU DESCRIPCIÓN DE YOUTUBE -->
+        <div class="lcd-display-zone">
+            <div class="lcd-screen">
+                <div class="lcd-header">// CHANNEL PROFILE DESCR. [SYS.INFO]</div>
+                <div class="lcd-text">
+                    <span class="highlight">NIELS PALERMO:</span> Productor nacido en Buenos Aires, categoría 1992. Comencé a hacer música en el año 2012. Explorando géneros & texturas: <span class="highlight">Drums, Bass, Hip Hop, Electrónica, Ambiental & Experimental</span>.
+                </div>
+            </div>
+        </div>
+
+        <!-- REPRODUCTOR DE VIDEO ABSTRACTO Y ALEATORIO DE TU PLAYLIST -->
+        <div class="video-zone">
+            <div class="section-label">// DISPLAY DE TRACKS : PLAYLIST "DEMO RECORDINGS"</div>
+            
+            <div class="abstract-video-card">
+                <div class="video-container">
+                    <iframe id="youtubeEmbed" src="" allowfullscreen></iframe>
+                </div>
+            </div>
+
+            <div class="video-controls">
+                <button class="random-btn" onclick="loadRandomVideo()">🔀 RANDOM TRACK (DEMO RECORDINGS)</button>
+            </div>
+        </div>
+
+        <!-- LISTA ABSTRACTA DE SETUP / HARDWARE -->
+        <div class="setup-grid">
+            <div class="hardware-card">
+                <h3>Behringer EDGE</h3>
+                <p>Sintetizador percusivo semimodular analógico. Dual VCO, secuencia de 8 pasos, timbres industriales y generación FM.</p>
+            </div>
+            <div class="hardware-card">
+                <h3>IK UNO Drum</h3>
+                <p>Caja de ritmos analógica/PCM. Secuenciador de 64 pasos, saturación máster y estructuración de patrones.</p>
+            </div>
+            <div class="hardware-card">
+                <h3>Acoustic & Digital Hybrid</h3>
+                <p>Integración de procesos analógicos con secuencias digitales desestructuradas y sincrónicas.</p>
+            </div>
+        </div>
+
+        <footer>
+            NIELS PALERMO — BUENOS AIRES — ESTILO Y DISEÑO FRACTAL &copy; 2026
+        </footer>
+
+    </div>
+
+    <script>
+        /* ===================================================
+           1. REPRODUCCIÓN ALEATORIA DE PLAYLIST DEMO RECORDINGS
+           =================================================== */
+        const demoRecordingsPlaylist = [
+            { id: "el50o_CMB2w", title: "NIELS PALERMO - 300" },
+            { id: "XNmaAWH4pxI", title: "NIELS PALERMO - 298" }
+        ];
+
+        function loadRandomVideo() {
+            const iframe = document.getElementById('youtubeEmbed');
+            const randomIndex = Math.floor(Math.random() * demoRecordingsPlaylist.length);
+            const selectedTrack = demoRecordingsPlaylist[randomIndex];
+            
+            iframe.src = `https://www.youtube.com/embed/${selectedTrack.id}?autoplay=0&rel=0`;
+        }
+
+        window.addEventListener('DOMContentLoaded', loadRandomVideo);
+
+        /* ===================================================
+           2. TEXTURA FRACTAL ANIMADA
+           =================================================== */
+        const canvas = document.getElementById('fractalCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let time = 0;
+
+        function drawFractalTexture() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const imgData = ctx.createImageData(width, height);
+            const data = imgData.data;
+
+            time += 0.015;
+
+            for (let x = 0; x < width; x += 4) {
+                for (let y = 0; y < height; y += 4) {
+                    let nx = (x / width) - 0.5;
+                    let ny = (y / height) - 0.5;
+
+                    let val = Math.sin(nx * 10 + time) * Math.cos(ny * 10 + time) +
+                              Math.sin((nx + ny) * 15 - time);
+
+                    let index = (x + y * width) * 4;
+
+                    data[index]     = Math.floor(160 + val * 60);  // R
+                    data[index + 1] = Math.floor(55 + val * 25);   // G
+                    data[index + 2] = Math.floor(25);              // B
+                    data[index + 3] = Math.floor(Math.abs(val) * 35); // Alpha
+                }
+            }
+
+            ctx.putImageData(imgData, 0, 0);
+            requestAnimationFrame(drawFractalTexture);
+        }
+
+        drawFractalTexture();
+    </script>
+</body>
+</html>
